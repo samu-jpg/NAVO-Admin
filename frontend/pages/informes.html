@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAVO — Informes</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">NAVO</div>
+  </header>
+
+  <div class="page">
+    <aside class="sidebar">
+      <a href="../index.html">Panel en Vivo</a>
+      <a href="rutas.html">Rutas</a>
+      <a href="asignacion.html">Asignacion</a>
+      <a href="informes.html" class="active">Informes</a>
+      <div class="status-bar" style="margin-top:auto;font-size:0.78rem;" id="informes-status">Cargando...</div>
+    </aside>
+
+    <div class="main-area">
+      <div class="toolbar">
+        <span style="color:var(--text-muted);font-size:0.8rem;">Reportes de auditoria, ingresos y deteccion de eventos</span>
+      </div>
+
+      <main class="main-content" style="display:flex;gap:1.25rem;">
+
+        <!-- MENU LATERAL DE INFORMES -->
+        <nav class="informes-nav">
+          <a class="informes-nav-item active" data-tab="pasajeros" onclick="cambiarTab('pasajeros')">Historial de Pasajeros</a>
+          <a class="informes-nav-item" data-tab="alertas" onclick="cambiarTab('alertas')">Alertas de Operacion</a>
+          <a class="informes-nav-item" data-tab="vehiculos" onclick="cambiarTab('vehiculos')">Informes de Vehiculos</a>
+        </nav>
+
+        <!-- CONTENIDO -->
+        <div class="informes-content">
+
+          <!-- TAB: HISTORIAL DE PASAJEROS -->
+          <div class="tab-content" id="tab-pasajeros">
+            <div class="page-header">
+              <h1>Historial de Pasajeros</h1>
+              <p>Todos los viajes registrados con detalle de subida, bajada y tarifas</p>
+            </div>
+
+            <div class="filter-bar">
+              <label style="font-size:0.82rem;color:var(--text-muted);">Periodo:</label>
+              <select id="filtro-semana" onchange="cargarHistorialPasajeros()" class="filter-select">
+                <option value="hoy">Hoy</option>
+                <option value="ayer">Ayer</option>
+                <option value="semana">Esta semana</option>
+                <option value="semana-pasada">Semana pasada</option>
+                <option value="mes">Este mes</option>
+                <option value="todo" selected>Todo</option>
+              </select>
+              <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted);" id="rango-label">Cargando...</span>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="card">
+                <h3>Viajes en el Periodo</h3>
+                <div class="value accent" id="total-viajes">0</div>
+              </div>
+              <div class="card">
+                <h3>Pasajeros Distintos</h3>
+                <div class="value success" id="total-pasajeros">0</div>
+              </div>
+              <div class="card">
+                <h3>Ingresos del Periodo</h3>
+                <div class="value warning" id="total-ingresos">C$ 0.00</div>
+              </div>
+              <div class="card">
+                <h3>Ultimo Registro</h3>
+                <div class="value" id="ultima-actualizacion" style="font-size:0.95rem;color:var(--text-primary);">---</div>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Subio en</th>
+                    <th>Bajo en</th>
+                    <th>Tarifa</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody id="tabla-historial"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB: ALERTAS DE OPERACION -->
+          <div class="tab-content" id="tab-alertas" style="display:none;">
+            <div class="page-header">
+              <h1>Alertas de Operacion</h1>
+              <p>Eventos criticos que requieren atencion del dueno — incidentaless no se muestran como alertas</p>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="card">
+                <h3>Alertas Criticas</h3>
+                <div class="value danger" id="alerta-cantidad">0</div>
+              </div>
+              <div class="card">
+                <h3>Pasajeros a Bordo</h3>
+                <div class="value accent" id="alerta-pasajeros">0</div>
+              </div>
+              <div class="card">
+                <h3>Total Ingresos</h3>
+                <div class="value success" id="alerta-ingresos">C$ 0.00</div>
+              </div>
+              <div class="card">
+                <h3>Total Viajes</h3>
+                <div class="value" id="alerta-viajes" style="color:var(--text-primary);">0</div>
+              </div>
+            </div>
+
+            <div id="alertas-container">
+              <h2 style="font-size:0.9rem;font-weight:600;color:var(--danger);margin-bottom:0.5rem;">Criticas</h2>
+              <div id="alertas-lista"></div>
+            </div>
+          </div>
+
+          <!-- TAB: INFORMES DE VEHICULOS -->
+          <div class="tab-content" id="tab-vehiculos" style="display:none;">
+            <div class="page-header">
+              <h1>Informes de Vehiculos</h1>
+              <p>Resumen operativo del bus</p>
+            </div>
+
+            <div class="metrics-grid">
+              <div class="card">
+                <h3>Viajes Realizados</h3>
+                <div class="value accent" id="veh-viajes">0</div>
+              </div>
+              <div class="card">
+                <h3>Pasajeros Transportados</h3>
+                <div class="value success" id="veh-pasajeros">0</div>
+              </div>
+              <div class="card">
+                <h3>Total Ingresos</h3>
+                <div class="value warning" id="veh-ingresos">C$ 0.00</div>
+              </div>
+              <div class="card">
+                <h3>Ingresos Carga</h3>
+                <div class="value" id="veh-carga-ingresos" style="color:var(--warning);">C$ 0.00</div>
+              </div>
+              <div class="card">
+                <h3>Alertas Registradas</h3>
+                <div class="value warning" id="veh-alertas">0</div>
+              </div>
+              <div class="card">
+                <h3>Peso Estimado</h3>
+                <div class="value" id="veh-peso" style="font-size:1rem;color:var(--text-primary);">0 kg</div>
+                <div style="font-size:0.73rem;color:var(--text-muted);" id="veh-peso-limite"></div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:1rem;">
+              <h3 style="margin-bottom:0.4rem;">Pasajeros Actualmente a Bordo</h3>
+              <div class="value" id="veh-pasajeros-actuales" style="font-size:1.3rem;color:var(--accent);">0</div>
+              <div style="font-size:0.78rem;color:var(--text-muted);" id="veh-limite-pasajeros"></div>
+            </div>
+
+            <div class="card modulo-prox">
+              <h3 style="margin-bottom:0.8rem;">Modulos de Auditoria — Proximamente</h3>
+              <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">
+                Con la camara y GPS instalados, estos modulos detectaran automaticamente incidentes que los buseros suelen ocultar.
+              </p>
+              <div class="modulo-grid">
+                <div class="modulo-item">
+                  <div class="modulo-icon warning">&#9888;</div>
+                  <div class="modulo-body">
+                    <strong>Exceso de Velocidad</strong>
+                    <span>Deteccion por camara + GPS cuando el bus supera los limites</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+                <div class="modulo-item">
+                  <div class="modulo-icon accent">&#8635;</div>
+                  <div class="modulo-body">
+                    <strong>Desvios de Ruta</strong>
+                    <span>Alerta cuando el GPS muestra que el bus se salio del recorrido asignado</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+                <div class="modulo-item">
+                  <div class="modulo-icon warning">&#9202;</div>
+                  <div class="modulo-body">
+                    <strong>Paradas No Registradas</strong>
+                    <span>El bus se detiene donde no hay parada en la ruta — posible descarga ilegal</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+                <div class="modulo-item">
+                  <div class="modulo-icon danger">&#9888;</div>
+                  <div class="modulo-body">
+                    <strong>Detenciones por Autoridad</strong>
+                    <span>El bus queda inmovi mucho tiempo fuera de parada (reten, policia, transito)</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+                <div class="modulo-item">
+                  <div class="modulo-icon danger">&#9889;</div>
+                  <div class="modulo-body">
+                    <strong>Apagados No Autorizados</strong>
+                    <span>El sistema se desconecta repentinamente — posible manipulacion</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+                <div class="modulo-item">
+                  <div class="modulo-icon accent">&#9776;</div>
+                  <div class="modulo-body">
+                    <strong>Aforo y Sobreocupacion</strong>
+                    <span>Conteo en tiempo real de pasajeros vs capacidad maxima del bus</span>
+                  </div>
+                  <span class="modulo-badge">Proximamente</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    function cambiarTab(tab) {
+      document.querySelectorAll(".tab-content").forEach(el => el.style.display = "none");
+      document.querySelectorAll(".informes-nav-item").forEach(el => el.classList.remove("active"));
+      document.getElementById("tab-" + tab).style.display = "block";
+      document.querySelector("[data-tab='" + tab + "']").classList.add("active");
+      if (tab === "pasajeros") cargarHistorialPasajeros();
+      else if (tab === "alertas") cargarAlertas();
+      else cargarInformesVehiculos();
+    }
+
+    function obtenerRangoFechas() {
+      const opt = document.getElementById("filtro-semana").value;
+      const ahora = new Date();
+      const yyyy = ahora.getFullYear();
+      const mm = String(ahora.getMonth() + 1).padStart(2, "0");
+      const dd = String(ahora.getDate()).padStart(2, "0");
+      const hoy = yyyy + "-" + mm + "-" + dd;
+      const dias = n => { const d = new Date(ahora); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+      const inicioSemana = () => { const d = new Date(ahora); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0, 10); };
+      const finSemana = () => { const d = new Date(ahora); d.setDate(d.getDate() + (6 - d.getDay())); return d.toISOString().slice(0, 10); };
+
+      let desde, hasta, label;
+      switch (opt) {
+        case "hoy":
+          desde = hoy; hasta = hoy; label = "Hoy, " + hoy;
+          break;
+        case "ayer":
+          desde = dias(1); hasta = dias(1); label = "Ayer, " + dias(1);
+          break;
+        case "semana":
+          desde = inicioSemana(); hasta = finSemana();
+          label = "Semana del " + desde + " al " + hasta;
+          break;
+        case "semana-pasada":
+          const ini = new Date(ahora); ini.setDate(ini.getDate() - ini.getDay() - 7);
+          const fin = new Date(ahora); fin.setDate(fin.getDate() - fin.getDay() - 1);
+          desde = ini.toISOString().slice(0, 10);
+          hasta = fin.toISOString().slice(0, 10);
+          label = "Semana del " + desde + " al " + hasta;
+          break;
+        case "mes":
+          desde = yyyy + "-" + mm + "-01";
+          hasta = hoy;
+          label = "Mes de " + (["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"])[ahora.getMonth()];
+          break;
+        default:
+          desde = null; hasta = null; label = "Todo el historial";
+      }
+      document.getElementById("rango-label").textContent = label;
+      return { desde, hasta };
+    }
+
+    async function cargarHistorialPasajeros() {
+      try {
+        const rango = obtenerRangoFechas();
+        let url = API + "/api/informes/pasajeros";
+        const params = [];
+        if (rango.desde) params.push("desde=" + rango.desde);
+        if (rango.hasta) params.push("hasta=" + rango.hasta);
+        if (params.length) url += "?" + params.join("&");
+
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById("total-viajes").textContent = data.total_viajes;
+        document.getElementById("total-pasajeros").textContent = data.total_pasajeros;
+        document.getElementById("total-ingresos").textContent = "C$ " + data.total_ingresos.toFixed(2);
+        document.getElementById("ultima-actualizacion").textContent = data.viajes.length > 0
+          ? new Date(data.viajes[0].timestamp).toLocaleString("es-NI") : "---";
+
+        const tbody = document.getElementById("tabla-historial");
+        tbody.innerHTML = data.viajes.map(v => {
+          const ts = v.timestamp ? new Date(v.timestamp).toLocaleString("es-NI") : "---";
+          const tarifa = v.tarifa ? "C$ " + v.tarifa.toFixed(2) : "---";
+          return "<tr><td>" + v.id + "</td><td>" + (v.nombre || "ID " + v.track_id) + "</td><td>" + (v.origen || "---") + "</td><td>" + (v.destino || "---") + "</td><td>" + tarifa + "</td><td>" + ts + "</td></tr>";
+        }).join("");
+      } catch (e) {
+        document.getElementById("informes-status").textContent = "Error al cargar historial";
+      }
+    }
+
+    async function cargarAlertas() {
+      try {
+        const [vehRes, alertasRes, incidentesRes] = await Promise.all([
+          fetch(API + "/api/informes/vehiculos"),
+          fetch(API + "/api/alertas-fraude"),
+          fetch(API + "/api/incidentes"),
+        ]);
+        const veh = await vehRes.json();
+        const alertas = await alertasRes.json();
+        const incidentes = await incidentesRes.json();
+
+        document.getElementById("alerta-cantidad").textContent = veh.alertas;
+        document.getElementById("alerta-pasajeros").textContent = veh.pasajeros_actuales;
+        document.getElementById("alerta-ingresos").textContent = "C$ " + veh.total_ingresos.toFixed(2);
+        document.getElementById("alerta-viajes").textContent = veh.total_viajes;
+
+        const lista = document.getElementById("alertas-lista");
+        let html = "";
+
+        html += '<h2 style="font-size:0.9rem;font-weight:600;color:var(--danger);margin-bottom:0.5rem;">Criticas</h2>';
+        if (alertas.length === 0) {
+          html += '<p style="color:var(--success);font-size:0.9rem;margin-bottom:1rem;">No hay alertas criticas. La operacion esta bajo control.</p>';
+        } else {
+          html += alertas.slice().reverse().map(a => {
+            const ts = a.ultimo_timestamp ? new Date(a.ultimo_timestamp).toLocaleString("es-NI") : "---";
+            const tipo = (a.tipo || "evento").replace(/_/g, " ");
+            const conteo = a.conteo || 1;
+            const badge = conteo > 1 ? `<span class="alerta-badge">x${conteo}</span>` : "";
+            const detalle = (a.detalle && a.detalle.length > 0)
+              ? a.detalle.map(d =>
+                  `<div class="alerta-detalle-item">
+                    <span class="alerta-detalle-time">${new Date(d.fecha).toLocaleString("es-NI")}</span>
+                    <span class="alerta-detalle-motivo">${d.motivo || ""}</span>
+                    <span class="alerta-detalle-recom">${d.recomendacion || ""}</span>
+                  </div>`
+                ).join("")
+              : "";
+            return `<div class="alerta-card critica" onclick="this.classList.toggle('expanded')">
+              <div class="alerta-card-header">
+                <strong>${tipo}</strong> ${badge}
+                <span class="alerta-time">${ts}</span>
+              </div>
+              <p>${a.mensaje || ""}</p>
+              ${detalle ? `<div class="alerta-detalle">${detalle}</div>` : ""}
+            </div>`;
+          }).join("");
+        }
+
+        html += '<h2 style="font-size:0.9rem;font-weight:600;color:var(--text-muted);margin:1rem 0 0.5rem 0;">Incidentes Menores (solo informativos)</h2>';
+        if (incidentes.length === 0) {
+          html += '<p style="color:var(--text-muted);font-size:0.9rem;">No hay incidentes registrados.</p>';
+        } else {
+          html += incidentes.slice().reverse().map(a => {
+            const ts = a.timestamp ? new Date(a.timestamp).toLocaleString("es-NI") : "---";
+            const tipo = (a.tipo || "evento").replace(/_/g, " ");
+            return "<div class='alerta-card incidente'><strong>" + tipo + "</strong><p>" + a.mensaje + "</p><div class='alerta-time'>" + ts + "</div></div>";
+          }).join("");
+        }
+
+        lista.innerHTML = html;
+      } catch (e) {
+        document.getElementById("informes-status").textContent = "Error al cargar alertas";
+      }
+    }
+
+    async function cargarInformesVehiculos() {
+      try {
+        const res = await fetch(API + "/api/informes/vehiculos");
+        const veh = await res.json();
+
+        document.getElementById("veh-viajes").textContent = veh.total_viajes;
+        document.getElementById("veh-pasajeros").textContent = veh.total_pasajeros;
+        document.getElementById("veh-ingresos").textContent = "C$ " + veh.total_ingresos.toFixed(2);
+        document.getElementById("veh-alertas").textContent = veh.alertas;
+        document.getElementById("veh-pasajeros-actuales").textContent = veh.pasajeros_actuales;
+        document.getElementById("veh-carga-ingresos").textContent = "C$ " + (veh.total_carga || 0).toFixed(2);
+        document.getElementById("veh-peso").textContent = (veh.peso_estimado_kg || 0) + " kg";
+        document.getElementById("veh-peso-limite").textContent = "Limite: " + (veh.limite_peso_kg || 6800) + " kg";
+        document.getElementById("veh-limite-pasajeros").textContent = "Capacidad: " + (veh.limite_pasajeros || 80) + " pasajeros";
+      } catch (e) {
+        document.getElementById("informes-status").textContent = "Error al cargar informes";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      cargarHistorialPasajeros();
+      setInterval(function() {
+        const active = document.querySelector(".informes-nav-item.active");
+        if (active) cambiarTab(active.dataset.tab);
+      }, 5000);
+    });
+  </script>
+</body>
+</html>

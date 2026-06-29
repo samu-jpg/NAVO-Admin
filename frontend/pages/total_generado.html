@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAVO - Ingresos</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+    <div class="sidebar">
+        <h2>🚌 NAVO</h2>
+        <nav>
+            <a href="../index.html">Panel en Vivo</a>
+            <a href="total_generado.html" class="active">Ingresos</a>
+            <a href="rutas.html">Cartilla de Rutas</a>
+            <a href="informes.html">Informes Históricos</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Control Financiero Avanzado</h1>
+            <p>Auditoría de ingresos calculados vs recaudación del chofer</p>
+        </div>
+
+        <div class="card" style="max-width: 400px; margin-bottom: 2rem;">
+            <h3>Total Auditado Hoy</h3>
+            <div class="value green" id="caja-total" style="font-size: 3rem;">C$ 0.00</div>
+        </div>
+
+        <h2>Resumen Analítico por Tramo</h2>
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tramo Regular</th>
+                    <th>Tarifa Pública</th>
+                    <th>Estatus de Cobro</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Chinandega ➔ Posoltega</td>
+                    <td>C$ 30.00</td>
+                    <td style="color: var(--accent-green);">Verificado</td>
+                </tr>
+                <tr>
+                    <td>Chinandega ➔ León</td>
+                    <td>C$ 70.00</td>
+                    <td style="color: var(--accent-green);">Verificado</td>
+                </tr>
+                <tr>
+                    <td>Posoltega ➔ León</td>
+                    <td>C$ 40.00</td>
+                    <td style="color: var(--accent-green);">Verificado</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="../js/main.js"></script>
+
+</body>
+
+</html>

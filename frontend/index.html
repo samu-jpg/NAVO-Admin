@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAVO — Panel de Monitoreo</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">NAVO</div>
+  </header>
+
+  <div class="page">
+    <aside class="sidebar">
+      <a href="index.html" class="active">Panel en Vivo</a>
+      <a href="pages/rutas.html">Rutas</a>
+      <a href="pages/asignacion.html">Asignacion</a>
+      <a href="pages/informes.html">Informes</a>
+      <div class="status-bar" id="prueba-status" style="margin-top:auto;">Listo</div>
+    </aside>
+
+    <div class="main-area">
+      <div class="toolbar">
+        <button class="toolbar-btn" id="btn-panel-control" onclick="togglePanelControl()">Panel de Control</button>
+      </div>
+
+      <div class="panel-expand" id="panel-expand">
+        <div class="panel-grid">
+
+          <div class="panel-card">
+            <h4>Camara</h4>
+            <div class="panel-indicator" style="margin-bottom:0.4rem;">
+              <span class="panel-dot off" id="cam-dot"></span>
+              <span id="cam-status-text">Inactiva</span>
+            </div>
+            <button class="btn btn-primary btn-block" id="btn-abrir-cam" onclick="abrirCamaraLocal()">Abrir camara</button>
+            <button class="btn btn-danger btn-block" id="btn-cerrar-cam" onclick="cerrarCamaraLocal()" style="display:none;">Cerrar camara</button>
+          </div>
+
+          <div class="panel-card">
+            <h4>Pasajero (manual)</h4>
+            <div class="panel-row">
+              <span style="font-size:0.78rem;color:var(--text-muted);">Track:</span>
+              <input type="number" id="track-id-input" value="1" min="1" class="panel-input">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="eventoSubir()">Subir pasajero</button>
+            <button class="btn btn-success btn-block" onclick="eventoBajar()" style="margin-top:0.2rem;">Bajar pasajero</button>
+            <button class="btn btn-warning btn-block" onclick="eventoAgregarCarga()" style="margin-top:0.2rem;">+ Carga (C$10)</button>
+          </div>
+
+          <div class="panel-card">
+            <h4>Parada (GPS)</h4>
+            <div class="panel-paradas" id="parada-buttons"></div>
+            <button class="btn-en-ruta" onclick="ponerEnRuta()">En Ruta</button>
+          </div>
+
+          <div class="panel-card">
+            <h4>YOLO</h4>
+            <div class="panel-indicator" style="margin-bottom:0.4rem;">
+              <span class="panel-dot off" id="yolo-dot"></span>
+              <span id="yolo-status-text">Detenido</span>
+            </div>
+            <button class="btn btn-primary btn-block" id="btn-yolo-start" onclick="iniciarYOLO()">Iniciar YOLO</button>
+            <button class="btn btn-danger btn-block" id="btn-yolo-stop" onclick="detenerYOLO()" style="display:none;">Detener YOLO</button>
+          </div>
+
+          <div class="panel-card">
+            <h4>Linea de Puerta</h4>
+            <div class="panel-row">
+              <span style="font-size:0.78rem;color:var(--text-muted);">Mostrar</span>
+              <div class="toggle active" id="toggle-linea" onclick="toggleLinea()"></div>
+            </div>
+            <div class="panel-row" style="margin-top:0.3rem;">
+              <input type="range" id="linea-slider" min="10" max="90" value="60" class="linea-slider">
+              <span id="linea-valor" class="linea-valor">60%</span>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <h4>Modo Feria (Demo)</h4>
+            <div class="panel-row">
+              <div class="toggle" id="toggle-auto" onclick="toggleAutoMode()"></div>
+              <div>
+                <div class="toggle-label">Automatico</div>
+                <div class="toggle-sub">Pasajeros suben/bajan solos</div>
+              </div>
+            </div>
+            <div style="margin-top:0.4rem;font-size:0.78rem;color:var(--text-muted);" id="auto-status">
+              Desactivado — use botones manuales
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h1>Monitoreo en Tiempo Real</h1>
+          <p>Control de pasajeros y auditoria contra robos — modo feria: los pasajeros se detectan automaticamente al pasar por la puerta</p>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="card">
+            <h3>Pasajeros a Bordo</h3>
+            <div class="value accent" id="pasajeros-cuenta">0</div>
+          </div>
+          <div class="card">
+            <h3>Caja Pasajes</h3>
+            <div class="value success" id="caja-total">C$ 0.00</div>
+          </div>
+          <div class="card">
+            <h3>Carga (Bultos)</h3>
+            <div class="value warning" id="carga-cuenta" style="font-size:1.15rem;">0</div>
+            <div style="font-size:0.73rem;color:var(--text-muted);" id="carga-ingresos"></div>
+          </div>
+          <div class="card">
+            <h3>Peso Estimado</h3>
+            <div class="value" id="peso-estimado" style="font-size:1.05rem;color:var(--text-primary);">0 kg</div>
+          </div>
+          <div class="card">
+            <h3>Parada Actual</h3>
+            <div class="value" id="parada-actual" style="font-size:1.15rem;color:var(--text-primary);">Cargando...</div>
+          </div>
+          <div class="card">
+            <h3>Estado</h3>
+            <div class="value" id="estado-bus" style="font-size:1.15rem;color:var(--text-primary);">---</div>
+          </div>
+        </div>
+
+        <div class="cam-grid">
+
+          <div class="cam-view">
+            <div class="cam-view-header">
+              <h3>Camara 1 — Puerta</h3>
+              <div class="panel-indicator" id="cam-info" style="display:none;">
+                <span class="panel-dot on"></span>
+                <span id="cam-fps" style="font-size:0.78rem;color:var(--success);">0 FPS</span>
+              </div>
+            </div>
+            <div class="cam-wrapper">
+              <video id="cam-video" autoplay playsinline muted style="display:none;"></video>
+              <canvas id="cam-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+              <div class="cam-placeholder" id="cam-placeholder">
+                <div class="cam-icon">&#9654;</div>
+                <p>Active "Modo Feria" para ver el flujo automatico de pasajeros</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="cam-view cam-view-2">
+            <div class="cam-view-header">
+              <h3>Camara 2 — Pasillo</h3>
+              <div class="panel-indicator">
+                <span class="panel-dot off"></span>
+                <span style="font-size:0.78rem;color:var(--text-muted);">Inactiva</span>
+              </div>
+            </div>
+            <div class="cam-wrapper">
+              <video id="cam-video-2" autoplay playsinline muted style="display:none;"></video>
+              <canvas id="cam-overlay-2" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
+              <div class="cam-placeholder">
+                <div class="cam-icon" style="opacity:0.3;">&#9673;</div>
+                <p style="color:var(--text-muted);">Camara 2 — disponible en proxima actualizacion</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="alerts-section" style="margin-top:1.5rem;">
+          <h2 style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">Alertas Recientes</h2>
+          <div id="main-alertas-lista"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

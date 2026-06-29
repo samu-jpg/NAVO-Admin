@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAVO — Asignacion</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">NAVO</div>
+  </header>
+
+  <div class="page">
+    <aside class="sidebar">
+      <a href="../index.html">Panel en Vivo</a>
+      <a href="rutas.html">Rutas</a>
+      <a href="asignacion.html" class="active">Asignacion</a>
+      <a href="informes.html">Informes</a>
+      <div class="status-bar" id="asignacion-status" style="margin-top:auto;">Complete los campos</div>
+    </aside>
+
+    <div class="main-area">
+      <div class="toolbar">
+        <div class="toolbar-group" style="flex:1;">
+          <span class="toolbar-label">Bus</span>
+          <input type="text" id="bus-id-input" value="BUS-001" class="toolbar-input wide" style="width:100px;">
+        </div>
+        <div class="toolbar-group" style="flex:1;">
+          <span class="toolbar-label">Conductor</span>
+          <input type="text" id="conductor-input" value="Carlos" class="toolbar-input wide" style="width:120px;">
+        </div>
+        <div class="toolbar-group" style="flex:1;">
+          <span class="toolbar-label">Ruta</span>
+          <select id="ruta-select" class="toolbar-input" style="width:180px;">
+            <option value="">-- Seleccione --</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="asignarBus()">Asignar Bus</button>
+      </div>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h1>Asignacion de Buses</h1>
+          <p>Asignar un bus a una ruta para comenzar el monitoreo</p>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="card">
+            <h3>Buses Asignados</h3>
+            <div class="value accent" id="asignados-count">0</div>
+          </div>
+          <div class="card">
+            <h3>Disponibles</h3>
+            <div class="value success" id="disponibles-count">0</div>
+          </div>
+        </div>
+
+        <div id="asignaciones-container"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    var API_BASE = "http://localhost:8000";
+    var URL_RUTAS = API_BASE + "/api/rutas";
+    var URL_ASIGNACIONES = API_BASE + "/api/asignaciones";
+
+    function setStatus(msg, tipo) {
+      var el = document.getElementById("asignacion-status");
+      el.textContent = msg;
+      el.className = "status-bar";
+      if (tipo) el.classList.add("status-" + tipo);
+    }
+
+    async function init() {
+      await Promise.all([cargarRutasSelect(), cargarAsignaciones()]);
+    }
+
+    async function cargarRutasSelect() {
+      try {
+        var res = await fetch(URL_RUTAS);
+        var rutas = await res.json();
+        var select = document.getElementById("ruta-select");
+        select.innerHTML = '<option value="">-- Seleccione --</option>' +
+          rutas.map(function(r) { return '<option value="' + r.id + '">' + r.nombre + '</option>'; }).join("");
+      } catch(e) {}
+    }
+
+    async function cargarAsignaciones() {
+      try {
+        var res = await fetch(URL_ASIGNACIONES);
+        var data = await res.json();
+        var asignaciones = data.asignaciones || [];
+        var container = document.getElementById("asignaciones-container");
+
+        document.getElementById("asignados-count").textContent = asignaciones.length;
+        document.getElementById("disponibles-count").textContent = Math.max(0, 5 - asignaciones.length);
+
+        if (!asignaciones.length) {
+          container.innerHTML = '<div class="card" style="padding:2rem;text-align:center;color:var(--text-muted);"><p>No hay buses asignados aun.</p></div>';
+          return;
+        }
+
+        container.innerHTML = asignaciones.map(function(a) {
+          return '<div class="card asignacion-card">' +
+            '<div class="asignacion-header">' +
+              '<div>' +
+                '<h3 style="margin:0;font-size:0.88rem;">' + a.bus_id + '</h3>' +
+                '<small style="color:var(--text-muted);">Conductor: ' + (a.conductor || a.nombre || "-") + ' &mdash; Ruta ID: ' + a.ruta_id + '</small>' +
+              '</div>' +
+              '<div class="asignacion-status ' + (a.activa ? 'status-activa' : 'status-inactiva') + '">' +
+                (a.activa ? 'Activa' : 'Inactiva') +
+              '</div>' +
+            '</div>' +
+            (a.ruta_nombre ? '<p style="margin:0.5rem 0 0 0;"><strong style="color:var(--text-secondary);font-size:0.82rem;">Ruta:</strong> <span style="font-size:0.85rem;">' + a.ruta_nombre + '</span></p>' : '') +
+            (a.parada_actual ? '<p style="margin:0.1rem 0 0 0;font-size:0.8rem;color:var(--text-muted);">Parada actual: ' + a.parada_actual + '</p>' : '') +
+            '<div style="margin-top:0.6rem;">' +
+              '<button class="btn btn-sm btn-danger" onclick="desasignarBus(\'' + a.bus_id + '\')">Desasignar</button> ' +
+              '<button class="btn btn-sm btn-primary" onclick="activarAsignacion(\'' + a.bus_id + '\')">Activar</button>' +
+            '</div>' +
+          '</div>';
+        }).join("");
+      } catch(e) {}
+    }
+
+    async function asignarBus() {
+      var bus_id = document.getElementById("bus-id-input").value.trim();
+      var conductor = document.getElementById("conductor-input").value.trim();
+      var ruta_id = document.getElementById("ruta-select").value;
+      if (!bus_id || !conductor || !ruta_id) { setStatus("Complete todos los campos", "error"); return; }
+      try {
+        var res = await fetch(URL_ASIGNACIONES, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bus_id: bus_id, conductor: conductor, ruta_id: ruta_id }),
+        });
+        if (!res.ok) { var e = await res.json(); setStatus(e.detail || "Error", "error"); return; }
+        document.getElementById("bus-id-input").value = "BUS-00" + (Math.floor(Math.random() * 9) + 2);
+        setStatus("Bus asignado", "ok");
+        await Promise.all([cargarRutasSelect(), cargarAsignaciones()]);
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    async function desasignarBus(bus_id) {
+      if (!confirm("Desasignar " + bus_id + "?")) return;
+      try {
+        await fetch(URL_ASIGNACIONES + "/" + bus_id, { method: "DELETE" });
+        setStatus("Bus desasignado", "ok");
+        cargarAsignaciones();
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    async function activarAsignacion(bus_id) {
+      try {
+        await fetch(API_BASE + "/api/cambiar-estado-bus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bus_id: bus_id, estado: "EN_RUTA" }),
+        });
+        setStatus("Bus activado", "ok");
+        cargarAsignaciones();
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

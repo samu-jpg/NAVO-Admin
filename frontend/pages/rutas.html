@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAVO — Rutas</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">NAVO</div>
+  </header>
+
+  <div class="page">
+    <aside class="sidebar">
+      <a href="../index.html">Panel en Vivo</a>
+      <a href="rutas.html" class="active">Rutas</a>
+      <a href="asignacion.html">Asignacion</a>
+      <a href="informes.html">Informes</a>
+      <div class="status-bar" id="ruta-status" style="margin-top:auto;">Complete los campos</div>
+    </aside>
+
+    <div class="main-area">
+      <div class="toolbar" style="flex-wrap:wrap;gap:0.5rem;">
+        <span style="font-size:0.82rem;color:var(--text-muted);">Crear una ruta nueva:</span>
+        <input type="text" id="ruta-nombre" placeholder="Nombre, ej: Chinandega - Leon" style="background:var(--bg-deep);border:1px solid var(--border);color:var(--text-primary);padding:0.4rem 0.7rem;border-radius:8px;font-size:0.85rem;width:220px;">
+        <input type="text" id="ruta-paradas" placeholder="Paradas separadas por coma, ej: Chinandega, Posoltega, Leon" style="background:var(--bg-deep);border:1px solid var(--border);color:var(--text-primary);padding:0.4rem 0.7rem;border-radius:8px;font-size:0.85rem;width:380px;">
+        <button class="btn btn-primary btn-sm" onclick="crearRuta()">Crear Ruta</button>
+      </div>
+
+      <main class="main-content">
+        <div class="page-header">
+          <h1>Rutas de la empresa</h1>
+          <p>Las rutas tienen un nombre y una lista de paradas. Ejemplo: "Chinandega - Leon" con paradas "Chinandega, Posoltega, Leon". Despues de crear una ruta, puede asignarle un bus en la pagina Asignacion.</p>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+          <button class="btn btn-sm btn-ghost" onclick="cargarEjemplo('Chinandega - Leon', 'Chinandega, Posoltega, Leon')">Ejemplo: Chinandega - Leon</button>
+          <button class="btn btn-sm btn-ghost" onclick="cargarEjemplo('Managua - Granada', 'Managua, Masaya, Granada')">Ejemplo: Managua - Granada</button>
+          <button class="btn btn-sm btn-ghost" onclick="cargarEjemplo('Leon - Esteli', 'Leon, Esteli')">Ejemplo: Leon - Esteli</button>
+        </div>
+
+        <div id="rutas-container"></div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:8000";
+    const URL_RUTAS = API_BASE + "/api/rutas";
+
+    function setStatus(msg, tipo) {
+      const el = document.getElementById("ruta-status");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "status-bar";
+      if (tipo) el.classList.add("status-" + tipo);
+    }
+
+    function cargarEjemplo(nombre, paradas) {
+      document.getElementById("ruta-nombre").value = nombre;
+      document.getElementById("ruta-paradas").value = paradas;
+      setStatus("Ejemplo cargado, presione 'Crear Ruta'", "ok");
+    }
+
+    async function cargarRutas() {
+      try {
+        const res = await fetch(URL_RUTAS);
+        const rutas = await res.json();
+        const container = document.getElementById("rutas-container");
+        if (!rutas.length) {
+          container.innerHTML = '<div class="card" style="padding:2rem;text-align:center;color:var(--text-muted);"><p>Todavia no hay rutas. Escriba el nombre y las paradas arriba y presione "Crear Ruta".</p></div>';
+          return;
+        }
+        container.innerHTML = rutas.map(r => {
+          const paradas = Array.isArray(r.paradas)
+            ? r.paradas.map(p => typeof p === "string" ? p : p.nombre).filter(Boolean)
+            : [];
+          return '<div class="card ruta-card">' +
+            '<div class="ruta-header">' +
+              '<h3>' + r.nombre + '</h3>' +
+              '<div class="ruta-acciones">' +
+                '<button class="btn btn-sm btn-primary" onclick="editarRuta(\'' + r.id + '\')">Editar</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="eliminarRuta(\'' + r.id + '\')">Eliminar</button>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ruta-paradas">' + paradas.map(p => '<span class="parada-tag">' + p + '</span>').join("") + '</div>' +
+            '<span class="ruta-id">ID: ' + r.id + '</span>' +
+          '</div>';
+        }).join("");
+      } catch(e) {
+        document.getElementById("rutas-container").innerHTML = '<div class="card" style="padding:2rem;text-align:center;color:var(--danger);"><p>Error al cargar rutas.</p></div>';
+      }
+    }
+
+    async function crearRuta() {
+      const nombre = document.getElementById("ruta-nombre").value.trim();
+      const paradasStr = document.getElementById("ruta-paradas").value.trim();
+      if (!nombre || !paradasStr) { setStatus("Escriba el nombre y las paradas primero", "error"); return; }
+      const paradas = paradasStr.split(",").map(p => p.trim()).filter(Boolean);
+      try {
+        const res = await fetch(URL_RUTAS, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, paradas }),
+        });
+        if (!res.ok) { const e = await res.json(); setStatus(e.detail || "Error", "error"); return; }
+        document.getElementById("ruta-nombre").value = "";
+        document.getElementById("ruta-paradas").value = "";
+        setStatus("Ruta creada correctamente", "ok");
+        cargarRutas();
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    async function eliminarRuta(id) {
+      if (!confirm("Eliminar esta ruta?")) return;
+      try {
+        await fetch(URL_RUTAS + "/" + id, { method: "DELETE" });
+        setStatus("Ruta eliminada", "ok");
+        cargarRutas();
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    async function editarRuta(id) {
+      const nuevoNombre = prompt("Nuevo nombre de la ruta:");
+      if (!nuevoNombre) return;
+      const nuevasParadas = prompt("Nuevas paradas (separadas por coma):");
+      if (!nuevasParadas) return;
+      const paradas = nuevasParadas.split(",").map(p => p.trim()).filter(Boolean);
+      try {
+        const res = await fetch(URL_RUTAS + "/" + id, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre: nuevoNombre, paradas }),
+        });
+        if (!res.ok) { const e = await res.json(); setStatus(e.detail || "Error", "error"); return; }
+        setStatus("Ruta actualizada", "ok");
+        cargarRutas();
+      } catch(e) { setStatus("Error de conexion", "error"); }
+    }
+
+    document.addEventListener("DOMContentLoaded", cargarRutas);
+  </script>
+</body>
+</html>
