@@ -9,3 +9,4 @@ backend/env/
 backend/yolo_output.log
 backend/data/*.tmp
 backend/src/navo_admin/**/__pycache__/
+*.egg-info/

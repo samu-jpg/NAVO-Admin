@@ -1,6 +1,6 @@
 fastapi>=0.138
 uvicorn>=0.49
-yolox>=0.3
+yolox @ git+https://github.com/Megvii-BaseDetection/YOLOX.git
 supervision>=0.19
 onnxruntime>=1.15
 opencv-python>=4.13
